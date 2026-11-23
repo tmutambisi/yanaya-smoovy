@@ -1,0 +1,8 @@
+# App-level ignores live in yanaya-app/.gitignore (node_modules, .next, .env*, ...)
+node_modules/
+.env*
+.DS_Store
+Thumbs.db
+
+# Personal Claude Code settings (shared launch.json is kept)
+.claude/settings.local.json

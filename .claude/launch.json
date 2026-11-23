@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "yanaya",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "yanaya-app", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "yanaya-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "yanaya-app", "run", "start", "--", "-p", "3100"],
+      "port": 3100
+    }
+  ]
+}
