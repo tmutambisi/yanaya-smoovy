@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   COLLECTION_POINTS,
+  DELIVERY_MIN_BOTTLES,
   DEPOT,
   MENU_BANNER,
   MENU_CATEGORIES,
@@ -54,11 +55,13 @@ export default function StorePage() {
           <div className="absolute -right-6 -bottom-10 h-40 w-40 rounded-full bg-sage-500/40" />
           <div className="relative flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-xl leading-tight font-black">Pay your way</p>
-              <p className="mt-0.5 inline-block bg-night px-2 py-0.5 text-lg font-black text-sage-400 italic">
-                {preferredMode === "delivery" ? "online or on delivery!" : "online or at collection!"}
+              <p className="text-xl leading-tight font-black">
+                {preferredMode === "delivery" ? "Cash on delivery" : "Cash at collection"}
               </p>
-              <p className="mt-2 text-xs text-white/80">EcoCash · OneMoney · InnBucks · Card · Cash</p>
+              <p className="mt-0.5 inline-block bg-night px-2 py-0.5 text-lg font-black text-sage-400 italic">
+                {preferredMode === "delivery" ? "pay when it arrives!" : "pay when you collect!"}
+              </p>
+              <p className="mt-2 text-xs text-white/80">No online payment needed · {usd(PRODUCT.priceUsd)} a bottle</p>
             </div>
             <div className="relative h-28 w-22 shrink-0 -rotate-6 overflow-hidden rounded-xl border-4 border-night shadow-xl">
               <Image src={PRODUCT.image} alt="" fill sizes="96px" className="object-cover" />
@@ -192,23 +195,26 @@ export default function StorePage() {
           The full menu is available in store. Online ordering for more items is coming soon.
         </p>
 
-        {/* Bulk savings */}
+        {/* Bulk / corporate */}
         <h2 id="corporate" className="mt-6 scroll-mt-20 px-1 text-lg font-semibold italic">
-          Buy more, save more
+          Ordering for the office?
         </h2>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {PRICE_TIERS.map((t) => (
-            <div key={t.min} className="rounded-xl bg-white p-3 text-center shadow-sm">
-              <p className="text-2xl font-black text-leaf-700">{t.discountPct}%</p>
-              <p className="text-xs text-muted">
-                {t.max === Infinity ? `${t.min}+ bottles` : `${t.min}–${t.max} bottles`}
-              </p>
-            </div>
-          ))}
+        {PRICE_TIERS.length ? (
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {PRICE_TIERS.map((t) => (
+              <div key={t.min} className="rounded-xl bg-white p-3 text-center shadow-sm">
+                <p className="text-2xl font-black text-leaf-700">{t.discountPct}%</p>
+                <p className="text-xs text-muted">
+                  {t.max === Infinity ? `${t.min}+ bottles` : `${t.min}–${t.max} bottles`}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <div className="mt-2 rounded-xl bg-white p-4 text-sm shadow-sm">
+          Offices, gyms and clinics: choose <b>Corporate / Bulk</b> when ordering and add your company name. Orders of{" "}
+          {DELIVERY_MIN_BOTTLES} bottles or more are delivered to your door, packed in crates of 10.
         </div>
-        <p className="mt-2 px-1 text-xs text-muted">
-          Offices, gyms and clinics: choose Corporate / Bulk when ordering. Verified accounts can pay by invoice.
-        </p>
 
         {/* Health benefits — PLACEHOLDER COPY: replace with Yanaya's approved wording */}
         <h2 className="mt-6 px-1 text-lg font-semibold italic">Why baobab?</h2>

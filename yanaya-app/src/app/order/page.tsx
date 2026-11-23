@@ -98,7 +98,7 @@ export default function OrderPage() {
           </div>
           {customer.isCorporate ? (
             <p className="-mt-2 mb-3 text-xs text-muted">
-              Offices, gyms &amp; clinics: verified accounts can pay by invoice / EFT.
+              Offices, gyms &amp; clinics: add your company name at checkout.
             </p>
           ) : null}
           <h2 className="font-bold">How many bottles?</h2>

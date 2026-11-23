@@ -190,7 +190,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
         location: mode === "delivery" ? state.location : null,
         customer: state.customer,
         paymentMethod,
-        paid: paymentMethod !== "on_receipt",
+        paid: false, // cash is collected on delivery / at collection
         quote: currentQuote,
         status: "received",
       };

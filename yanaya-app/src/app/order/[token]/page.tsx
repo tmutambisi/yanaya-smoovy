@@ -10,15 +10,19 @@ import { BagIcon, CheckIcon, Logo, ScooterIcon } from "@/components/ui";
 
 const STEPS: Record<"delivery" | "collect", { id: OrderStatus; label: string; hint: string }[]> = {
   delivery: [
-    { id: "received", label: "Order confirmed", hint: "Payment received" },
+    { id: "received", label: "Order confirmed", hint: "We've got your order" },
     { id: "preparing", label: "Preparing", hint: "Packing your bottles" },
-    { id: "out_for_delivery", label: "Out for delivery", hint: "Your rider is on the way" },
+    { id: "out_for_delivery", label: "Out for delivery", hint: "Your rider is on the way. Have your cash ready" },
     { id: "completed", label: "Delivered", hint: "Enjoy your Smoovy Baobab!" },
   ],
   collect: [
-    { id: "received", label: "Order confirmed", hint: "Payment received" },
+    { id: "received", label: "Order confirmed", hint: "We've got your order" },
     { id: "preparing", label: "Preparing", hint: "Packing your bottles" },
-    { id: "ready_for_collection", label: "Ready for collection", hint: "Show your order number at the depot" },
+    {
+      id: "ready_for_collection",
+      label: "Ready for collection",
+      hint: "Show your order number at the depot and pay in cash",
+    },
     { id: "completed", label: "Collected", hint: "Enjoy your Smoovy Baobab!" },
   ],
 };
@@ -45,9 +49,7 @@ export default function TrackOrderPage() {
   }
 
   const paid = order.paid ?? true;
-  const steps = STEPS[order.mode].map((s) =>
-    s.id === "received" && !paid ? { ...s, hint: "We've got your order" } : s,
-  );
+  const steps = STEPS[order.mode];
   const current = steps.findIndex((s) => s.id === order.status);
   const done = order.status === "completed";
   const suburb = SUBURBS.find((s) => s.id === order.location?.suburbId);
@@ -144,7 +146,7 @@ export default function TrackOrderPage() {
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="font-bold">Receipt</h2>
             <span className={`text-xs ${paid ? "text-muted" : "font-semibold text-sage-500"}`}>
-              {paid ? `Paid · ${methodLabel.split(" ")[0]}` : `${methodLabel}: ${usd(order.quote.totalUsd)} due`}
+              {paid ? "Paid in cash" : `${methodLabel}: ${usd(order.quote.totalUsd)} due`}
             </span>
           </div>
           <PriceBreakdown q={order.quote} />
@@ -154,13 +156,6 @@ export default function TrackOrderPage() {
           </p>
         </section>
 
-        <div className="rounded-2xl bg-leaf-50 p-4 text-sm text-leaf-900">
-          <p className="font-semibold">Get updates on this phone</p>
-          <p className="text-xs text-leaf-900/70">
-            Allow notifications and we&apos;ll tell you when your order moves. (Push notifications come in a later
-            step.)
-          </p>
-        </div>
 
         <Link
           href="/"

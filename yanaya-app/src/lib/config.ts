@@ -56,12 +56,13 @@ export const CRATE_SIZE = 10;
 /** Max per online order before we ask the customer to contact us. PLACEHOLDER */
 export const MAX_BOTTLES_PER_ORDER = 500;
 
-/** Confirmed tier bands — discount percentages are PLACEHOLDERS. */
-export const PRICE_TIERS = [
-  { min: 10, max: 19, discountPct: 5 },
-  { min: 20, max: 49, discountPct: 10 },
-  { min: 50, max: Infinity, discountPct: 15 },
-] as const;
+/**
+ * Volume discounts. NONE for now (confirmed): every bottle is the same price.
+ * To switch discounts on later, add bands here, e.g.
+ *   { min: 10, max: 19, discountPct: 5 }, { min: 20, max: Infinity, discountPct: 10 }
+ * The order page, summary and store page show discount info only when this list has entries.
+ */
+export const PRICE_TIERS: readonly { min: number; max: number; discountPct: number }[] = [];
 
 /** PLACEHOLDER delivery zones and fees (USD). */
 export const DELIVERY_ZONES = [
@@ -117,22 +118,19 @@ export function isOpenNow(p: { openDays: number[]; open: string; close: string }
   return mins >= toMins(p.open) && mins < toMins(p.close);
 }
 
-export const PAYMENT_METHODS = [
-  { id: "ecocash", label: "EcoCash", hint: "Prompt sent to your phone" },
-  { id: "onemoney", label: "OneMoney", hint: "Prompt sent to your phone" },
-  { id: "innbucks", label: "InnBucks", hint: "Pay with InnBucks code" },
-  { id: "card", label: "Visa / Mastercard / Zimswitch", hint: "Secure card page" },
-  // Proposal: "pay via Paynow ... or once delivered". Label changes by mode (see paymentLabel).
-  // Backend note: these orders skip Paynow, so the stock hold must last until the order is
-  // completed or cancelled by staff — not the 10-minute checkout window.
-  { id: "on_receipt", label: "Pay on delivery", hint: "Cash, EcoCash or swipe when you receive it" },
-] as const;
+/**
+ * Payment: CASH ONLY for now (confirmed). The customer pays cash to the rider on delivery,
+ * or at the depot on collection. No online payment, so no Paynow.
+ * Backend note: bottles are reserved when the order is placed and stay reserved until
+ * staff mark it delivered/collected or cancel it.
+ * Online methods (EcoCash, OneMoney, InnBucks, card via Paynow) can be added back here later.
+ */
+export const PAYMENT_METHODS = [{ id: "cash", label: "Cash" }] as const;
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];
 
-export function paymentLabel(id: PaymentMethodId, mode: "delivery" | "collect") {
-  if (id === "on_receipt") return mode === "delivery" ? "Pay on delivery" : "Pay at collection";
-  return PAYMENT_METHODS.find((m) => m.id === id)!.label;
+export function paymentLabel(_id: PaymentMethodId, mode: "delivery" | "collect") {
+  return mode === "delivery" ? "Cash on delivery" : "Cash at collection";
 }
 
 /** Map defaults (OpenStreetMap). Harare CBD. */

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Yanaya: How ordering works</title>
+<style>
+  :root {
+    --green: #00662a; --green-2: #0a7234; --green-tint: #ecf5ee;
+    --sage: #9ab46c; --sage-dark: #6e8746; --sage-tint: #eef3e4;
+    --char: #2a2a2c; --cream: #fcfcf6; --muted: #5f6661; --red: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--cream); color: var(--char);
+    font-family: "Segoe UI", ui-sans-serif, system-ui, Roboto, Arial, sans-serif; }
+  .page { width: 1080px; padding: 0 0 40px; }
+
+  header { background: var(--char); color: #fff; padding: 40px 56px 44px; display: flex; align-items: center; gap: 36px; }
+  header img { width: 330px; filter: drop-shadow(6px 7px 0 rgba(154,180,108,.9)); }
+  header h1 { margin: 0; font-size: 50px; line-height: 1.05; font-weight: 800; letter-spacing: -1px; }
+  header p { margin: 10px 0 0; font-size: 21px; color: rgba(255,255,255,.75); }
+
+  section { margin: 34px 48px 0; }
+  .sec-title { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .num { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff;
+    display: grid; place-items: center; font-size: 26px; font-weight: 800; border: 4px solid var(--char);
+    box-shadow: 3px 4px 0 var(--sage); flex-shrink: 0; }
+  .sec-title h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -.5px; }
+  .sec-title span { display: block; font-size: 18px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+
+  .card { background: #fff; border: 3px solid var(--char); border-radius: 22px; padding: 18px 22px;
+    box-shadow: 0 5px 0 var(--sage); }
+  .card h3 { margin: 0 0 4px; font-size: 23px; }
+  .card p { margin: 0; font-size: 18px; color: var(--muted); line-height: 1.4; }
+  .card.green { background: var(--green); color: #fff; }
+  .card.green p { color: rgba(255,255,255,.82); }
+  .card.tint { background: var(--sage-tint); }
+  .card.warn { background: #fff7e8; }
+
+  .arrow { height: 34px; display: flex; justify-content: center; }
+  .arrow::before { content: ""; width: 4px; background: var(--char); border-radius: 2px; }
+  .arrow-wrap { position: relative; }
+  .down { position: relative; height: 34px; }
+  .down::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 8px; width: 4px; margin-left: -2px; background: var(--char); }
+  .down::after { content: ""; position: absolute; left: 50%; bottom: 0; margin-left: -9px;
+    border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 12px solid var(--char); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  .decision { margin: 0 auto; width: 560px; text-align: center; background: var(--char); color: #fff;
+    border-radius: 999px; padding: 16px 24px; font-size: 24px; font-weight: 800; }
+  .decision small { display: block; font-size: 16px; font-weight: 500; color: rgba(255,255,255,.7); }
+  .branch-label { display: inline-block; font-size: 15px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 999px; margin-bottom: 10px; }
+  .bl-a { background: var(--sage); color: var(--char); }
+  .bl-b { background: var(--green); color: #fff; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip { font-size: 15px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--green-tint); color: var(--green); border: 2px solid var(--green); }
+  .card.green .chip { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.5); }
+
+  .tiers { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 12px; }
+  .tier { background: rgba(255,255,255,.12); border-radius: 14px; padding: 10px; text-align: center; }
+  .tier b { display: block; font-size: 26px; }
+  .tier span { font-size: 15px; color: rgba(255,255,255,.8); }
+
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; align-items: stretch; }
+  .step { position: relative; text-align: center; padding: 0 8px; }
+  .step .dot { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; background: var(--green);
+    border: 4px solid var(--char); display: grid; place-items: center; font-size: 28px; color: #fff; }
+  .step:not(:last-child)::after { content: ""; position: absolute; top: 30px; left: calc(50% + 38px); right: calc(-50% + 38px);
+    height: 4px; background: var(--char); }
+  .step h4 { margin: 0; font-size: 19px; }
+  .step p { margin: 4px 0 0; font-size: 15px; color: var(--muted); }
+
+  .yesno { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+  .yes, .no { border-radius: 14px; padding: 12px 14px; font-size: 17px; line-height: 1.35; }
+  .yes { background: var(--green-tint); border: 2px solid var(--green); }
+  .no { background: #fdecea; border: 2px solid var(--red); }
+  .yes b { color: var(--green); } .no b { color: var(--red); }
+
+  .ico { font-size: 30px; line-height: 1; margin-bottom: 8px; display: block; }
+  footer { margin: 34px 48px 0; padding-top: 18px; border-top: 3px dashed #cfd3c7; display: flex; justify-content: space-between;
+    font-size: 16px; color: var(--muted); }
+  .tbc { color: var(--sage-dark); font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <img src="../yanaya-app/public/brand/yanaya-logo.png" alt="Yanaya" />
+    <div>
+      <h1>How ordering works</h1>
+      <p>Smoovy Baobab online ordering: what the customer does, what the system checks, and what your team sees.</p>
+    </div>
+  </header>
+
+  <!-- 1. CUSTOMER -->
+  <section>
+    <div class="sec-title"><div class="num">1</div><h2>The customer orders<span>On their phone, in under a minute</span></h2></div>
+
+    <div class="card green" style="text-align:center">
+      <h3>Opens Yanaya</h3>
+      <p>Logo animation, then "Start My New Order"</p>
+    </div>
+    <div class="down"></div>
+
+    <div class="row">
+      <div class="card">
+        <span class="branch-label bl-b">Order for Delivery</span>
+        <h3>Where should we deliver?</h3>
+        <p>Picks their suburb (delivery fee shown), types the address and drops a pin on the map for the rider.</p>
+      </div>
+      <div class="card">
+        <span class="branch-label bl-a">Click &amp; Collect</span>
+        <h3>Who's collecting, and where?</h3>
+        <p>Collector's name and collection point, with opening hours and Open / Closed shown.</p>
+      </div>
+    </div>
+    <div class="down"></div>
+
+    <div class="card tint" style="text-align:center">
+      <h3>Chooses how many bottles</h3>
+      <p>Any number: quick buttons 10 / 20 / 50, or type their own. Bottles are <b>$1 each</b>.</p>
+    </div>
+    <div class="down"></div>
+
+    <div class="decision">Is it 10 bottles or more?<small>The system checks this automatically</small></div>
+    <div class="down"></div>
+
+    <div class="row">
+      <div class="card warn">
+        <span class="branch-label bl-a">Under 10</span>
+        <h3>Collect only</h3>
+        <p>The order switches to Click &amp; Collect and shows <b>"Add 6 more bottles to get delivery"</b> with a one-tap button.</p>
+      </div>
+      <div class="card green">
+        <span class="branch-label" style="background:#fff;color:#00662a">10 or more</span>
+        <h3>Delivery or Collect</h3>
+        <p>Delivered to the door, or collected. Same price for everyone: <b style="color:#fff">$1 a bottle</b>, no discounts for now.</p>
+      </div>
+    </div>
+    <div class="down"></div>
+
+    <div class="card" style="text-align:center">
+      <h3>Checkout: total shown in USD and ZiG, packed in crates of 10</h3>
+      <p>e.g. 24 bottles = 2 crates + 4 loose bottles</p>
+    </div>
+    <div class="down"></div>
+
+    <div class="row">
+      <div class="card green">
+        <span class="ico">💵</span>
+        <h3>Cash on delivery</h3>
+        <p>The customer pays the rider in cash when the order arrives.</p>
+      </div>
+      <div class="card green">
+        <span class="ico">🏪</span>
+        <h3>Cash at collection</h3>
+        <p>The customer pays in cash at the depot when they collect.</p>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:17px;color:var(--muted);margin:14px 0 0">Nothing is paid online. EcoCash and card payments can be switched on later.</p>
+  </section>
+
+  <!-- 2. STOCK -->
+  <section>
+    <div class="sec-title"><div class="num">2</div><h2>Stock stays accurate<span>No overselling, less waste</span></h2></div>
+    <div class="row">
+      <div class="card">
+        <span class="ico">🔒</span>
+        <h3>Bottles are reserved for each order</h3>
+        <p>As soon as an order is placed, its bottles are set aside so nobody else can buy them.</p>
+        <div class="yesno">
+          <div class="yes"><b>Delivered / collected ✓</b><br/>Bottles are taken from the <b>oldest fresh batch first</b></div>
+          <div class="no"><b>Cancelled ✗</b><br/>Bottles go straight back on sale</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="ico">📦</span>
+        <h3>Your stock, always up to date</h3>
+        <p>The team logs each new batch with its expiry date, and records walk-in sales and spoilage, so the online stock always matches the fridge.</p>
+        <p style="margin-top:10px">The app never sells more bottles than are in stock.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. TEAM -->
+  <section>
+    <div class="sec-title"><div class="num">3</div><h2>Your team delivers<span>Live order board for the Yanaya team</span></h2></div>
+    <div class="card">
+      <div class="steps">
+        <div class="step"><div class="dot">🔔</div><h4>New order</h4><p>Sound alert + packing guide, address and map pin</p></div>
+        <div class="step"><div class="dot">🥤</div><h4>Preparing</h4><p>One tap when packing starts</p></div>
+        <div class="step"><div class="dot">🛵</div><h4>On the way</h4><p>Or "Ready for collection"</p></div>
+        <div class="step"><div class="dot">✓</div><h4>Delivered</h4><p>Cash collected. Order complete</p></div>
+      </div>
+      <p style="margin-top:18px;text-align:center;font-size:19px">Each tap updates the customer's <b>live tracking page</b>, plus an <b>email</b> and a <b>phone notification</b>. No SMS costs.</p>
+    </div>
+  </section>
+
+  <!-- 4. RETENTION -->
+  <section>
+    <div class="sec-title"><div class="num">4</div><h2>Customers come back<span>Automatic, after every order</span></h2></div>
+    <div class="row4">
+      <div class="card tint"><span class="ico">⭐</span><h3>Day 1</h3><p>Asks for a one-tap star rating and review</p></div>
+      <div class="card tint"><span class="ico">🔁</span><h3>Day 10</h3><p>"Running low? Reorder your usual" reminder</p></div>
+      <div class="card tint"><span class="ico">⚡</span><h3>Near expiry</h3><p>Owner gets a one-click flash sale to clear the batch</p></div>
+      <div class="card tint"><span class="ico">📊</span><h3>Every Monday</h3><p>Summary: what to blend this week, review themes, who's due to reorder</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Delivery fees and opening hours to be confirmed by Yanaya</span>
+    <span>Prepared by Tungasonic Softwares</span>
+  </footer>
+</div>
+</body>
+</html>
