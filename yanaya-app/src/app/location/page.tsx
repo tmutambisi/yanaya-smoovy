@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { reverseGeocode, type ReverseResult } from "@/lib/geocode";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DELIVERY_ZONES, MAP_DEFAULT_CENTER, SUBURBS } from "@/lib/config";
@@ -15,6 +16,10 @@ const PinMap = dynamic(() => import("@/components/PinMap").then((m) => m.PinMap)
 
 type GeoState = "idle" | "locating" | "done" | "error";
 
+type Lookup =
+  | { status: "idle" | "looking" | "error" }
+  | { status: "found" | "outside"; result: ReverseResult };
+
 export default function LocationPage() {
   const router = useRouter();
   // Use the customer's chosen mode here (not the 10-bottle effective mode) so they can always set an address.
@@ -27,6 +32,38 @@ export default function LocationPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geo, setGeo] = useState<GeoState>("idle");
   const [touched, setTouched] = useState(false);
+  const [lookup, setLookup] = useState<Lookup>({ status: "idle" });
+  /** True while the street box holds text we filled in (so we may replace it on the next pin move). */
+  const [streetAuto, setStreetAuto] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  /** Pin/GPS moved: look up the real street + suburb and fill them in. */
+  const fillFromPin = async (p: { lat: number; lng: number }) => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setLookup({ status: "looking" });
+    try {
+      const r = await reverseGeocode(p.lat, p.lng, ctrl.signal);
+      if (ctrl.signal.aborted) return;
+      if (r.suburbId) setSuburbId(r.suburbId);
+      // Never overwrite what the customer typed themselves
+      const canReplace = addressRef.current.trim() === "" || streetAutoRef.current;
+      if (r.street && canReplace) {
+        setAddress(r.street);
+        setStreetAuto(true);
+      }
+      setLookup({ status: r.suburbId ? "found" : "outside", result: r });
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
+      setLookup({ status: "error" });
+    }
+  };
+  // Latest values for the async lookup above
+  const streetAutoRef = useRef(streetAuto);
+  streetAutoRef.current = streetAuto;
+  const addressRef = useRef(address);
+  addressRef.current = address;
 
   useEffect(() => {
     if (!hydrated) return;
@@ -54,8 +91,10 @@ export default function LocationPage() {
     setGeo("locating");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCoords(p);
         setGeo("done");
+        void fillFromPin(p);
       },
       () => setGeo("error"),
       { enableHighAccuracy: true, timeout: 10000 },
@@ -68,6 +107,7 @@ export default function LocationPage() {
   if (mode === "collect") return null;
 
   /* ---------- Delivery ---------- */
+  const lookupResult = "result" in lookup ? lookup.result : null;
   const suburb = SUBURBS.find((s) => s.id === suburbId);
   const fee = suburb ? DELIVERY_ZONES.find((z) => z.id === suburb.zone)?.feeUsd : undefined;
   const addressError = touched && address.trim().length < 5 ? "Enter your street address or building." : null;
@@ -104,6 +144,45 @@ export default function LocationPage() {
             </span>
           </span>
         </button>
+
+        {/* What we found at the pin */}
+        {lookup.status !== "idle" ? (
+          <div
+            aria-live="polite"
+            className={`rounded-2xl border-2 p-3 text-sm ${
+              lookup.status === "found"
+                ? "border-leaf-600 bg-leaf-50"
+                : lookup.status === "outside"
+                  ? "border-sage-400 bg-sage-100"
+                  : "border-black/10 bg-white"
+            }`}
+          >
+            {lookup.status === "looking" ? (
+              <p className="flex items-center gap-2 text-muted">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-leaf-600/30 border-t-leaf-600" />
+                Finding your address…
+              </p>
+            ) : lookup.status === "error" ? (
+              <p className="text-muted">Couldn&apos;t look up this spot. Choose your area and type your address below.</p>
+            ) : lookup.status === "found" ? (
+              <>
+                <p className="font-semibold text-leaf-700">
+                  ✓ {[lookup.result.street, lookup.result.areaName].filter(Boolean).join(", ")}
+                </p>
+                <p className="text-xs text-muted">Filled in for you below. Check it&apos;s right and add a house or flat number.</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold">
+                  {lookupResult?.areaName || lookupResult?.city || "This spot"} isn&apos;t in our delivery area yet
+                </p>
+                <p className="text-xs text-muted">
+                  Pick the nearest area below, or go back and choose Click &amp; Collect.
+                </p>
+              </>
+            )}
+          </div>
+        ) : null}
 
         <div>
           <label className="text-sm font-semibold" htmlFor="suburb-search">
@@ -152,6 +231,7 @@ export default function LocationPage() {
             onChange={(p) => {
               setCoords(p);
               setGeo("done");
+              void fillFromPin(p);
             }}
           />
           <p className="mt-1 text-xs text-muted">
@@ -166,7 +246,10 @@ export default function LocationPage() {
           <input
             id="address"
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={(e) => {
+              setAddress(e.target.value);
+              setStreetAuto(false); // customer edited it: keep their text
+            }}
             placeholder="e.g. 12 King George Rd, Block B"
             className="mt-2 h-12 w-full rounded-xl border border-black/10 bg-white px-4 outline-none focus:border-leaf-500"
           />
