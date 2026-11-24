@@ -1,14 +1,14 @@
 /*
- * Yanaya service worker.
+ * Smoovy service worker.
  * - Pages: network first, fall back to the last cached copy, then to /offline.html.
  * - Static files (JS/CSS, images, icons): served from cache, refreshed in the background.
  * - Never caches API calls or anything from other sites (payments must always be live).
  * Bump VERSION to force every phone to drop old caches.
  */
-const VERSION = "v1";
-const PAGES = `yanaya-pages-${VERSION}`;
-const ASSETS = `yanaya-assets-${VERSION}`;
-const PRECACHE = ["/offline.html", "/brand/yanaya-logo.png", "/icons/icon-192.png"];
+const VERSION = "v2";
+const PAGES = `smoovy-pages-${VERSION}`;
+const ASSETS = `smoovy-assets-${VERSION}`;
+const PRECACHE = ["/offline.html", "/smoovy/smoovy-logo.webp", "/icons/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(ASSETS).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -28,6 +28,7 @@ const isStaticAsset = (url) =>
   url.pathname.startsWith("/_next/image") ||
   url.pathname.startsWith("/brand/") ||
   url.pathname.startsWith("/icons/") ||
+  url.pathname.startsWith("/smoovy/") ||
   url.pathname.startsWith("/yanaya/");
 
 self.addEventListener("fetch", (event) => {

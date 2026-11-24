@@ -1,24 +1,35 @@
 @import "tailwindcss";
 
 /*
- * Yanaya brand palette — taken from the official logo:
- *   deep green #00662A · sage #9AB46C · charcoal #2A2A2C · white · cream #FCFCF6
+ * Smoovy palette, from the Smoovy catalogue and logo:
+ *   charcoal #2A2A2C · sage #9AB46C · olive #485030 (the "vy") · white · cream
+ * Flavour colours live in src/lib/smoovy.ts (set inline per flavour).
+ * Yanaya greens are kept for the "Also from Yanaya" section.
  */
 @theme {
-  --color-leaf-50: #ecf5ee;
-  --color-leaf-100: #cfe6d5;
-  --color-leaf-500: #1a7f3f;
-  --color-leaf-600: #0a7234;
-  --color-leaf-700: #00662a; /* brand deep green */
-  --color-leaf-900: #003d19;
+  --color-night: #2a2a2c;
+  --color-night-2: #1f1f21;
+  --color-sage: #9ab46c;
+  --color-sage-200: #dfe8cf;
   --color-sage-100: #eef3e4;
-  --color-sage-400: #9ab46c; /* brand sage */
-  --color-sage-500: #6e8746; /* darker sage for text on light backgrounds */
-  --color-cream: #fcfcf6; /* brand cream */
-  --color-night: #2a2a2c; /* brand charcoal */
+  --color-olive: #485030;
+  --color-cream: #fbfbf6;
   --color-ink: #2a2a2c;
-  --color-muted: #5f6661;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-muted: #63675f;
+  --color-leaf: #00662a;
+
+  --font-display: var(--font-barlow-condensed), "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 html,
@@ -30,59 +41,109 @@ body {
 body {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
 }
 
-/* ---------- Intro animation (see components/IntroSplash.tsx) ---------- */
-/* 1. deep green floods out from the centre over cream */
+::selection {
+  background: var(--color-sage);
+  color: var(--color-night);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Sticker style from the logo: charcoal outline + offset sage shadow */
+.sticker {
+  border: 3px solid var(--color-night);
+  box-shadow: 5px 6px 0 0 var(--color-sage);
+}
+.sticker-press {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sticker-press:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: 7px 8px 0 0 var(--color-sage);
+}
+.sticker-press:active {
+  transform: translate(4px, 5px);
+  box-shadow: 0 0 0 0 var(--color-sage);
+}
+
+/* Visually hidden but readable by screen readers */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Marquee ---------- */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 28s linear infinite;
+}
+.marquee-track.reverse {
+  animation-direction: reverse;
+}
+
+/* ---------- Bottle float ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-12px) rotate(calc(var(--r, 0deg) * -1)); }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ---------- WhatsApp button pulse ---------- */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.pulse-ring {
+  animation: pulse-ring 2.2s ease-out infinite;
+}
+
+/* ---------- Intro animation (components/IntroSplash.tsx) ---------- */
 @keyframes y-flood {
   from { clip-path: circle(0% at 50% 50%); }
   to { clip-path: circle(150% at 50% 50%); }
 }
-/* 2. logo pops in like a sticker being slapped on */
 @keyframes y-pop {
   0% { opacity: 0; transform: scale(0.2) rotate(-14deg); }
   55% { opacity: 1; transform: scale(1.12) rotate(3deg); }
   75% { transform: scale(0.96) rotate(-1deg); }
   100% { opacity: 1; transform: scale(1) rotate(0); }
 }
-/* 3. sage drop-shadow "lands" under the sticker */
 @keyframes y-land {
   from { filter: drop-shadow(0 0 0 rgba(154, 180, 108, 0)); }
   to { filter: drop-shadow(7px 8px 0 rgba(154, 180, 108, 0.9)); }
 }
-/* 4. a light sweep across the logo */
 @keyframes y-shine {
   from { background-position: -150% 0; }
   to { background-position: 250% 0; }
 }
-/* 5. logo lifts away and the overlay fades */
 @keyframes y-lift {
   to { opacity: 0; transform: translateY(-90px) scale(0.85); }
 }
 @keyframes y-fade-out {
   to { opacity: 0; visibility: hidden; }
 }
-/* home content rising in after the intro */
 @keyframes y-rise {
-  from { opacity: 0; transform: translateY(28px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
-}
-.y-rise {
-  animation: y-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .y-rise {
+  .marquee-track,
+  .float,
+  .pulse-ring {
     animation: none;
   }
-}
-
-/* Hide number spinners on the quantity input */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
 }

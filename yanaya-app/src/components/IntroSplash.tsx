@@ -1,18 +1,19 @@
 "use client";
 
 /**
- * Brand intro shown the first time the app opens in a session (~2s).
+ * Brand intro shown the first time the site opens in a visit (~2.2s):
+ * charcoal floods in, the "smoovy" sticker pops, its sage shadow lands, a light
+ * sweep passes, "by Yanaya" rises, then it lifts away.
  * - Tap anywhere to skip.
- * - Skipped entirely for "reduce motion" users and for the rest of the session once seen.
- * - Renders a solid green cover on first paint so returning users never see a flash of
- *   the home screen before we know whether to play it (home is green underneath anyway).
+ * - Skipped for "reduce motion" visitors and for the rest of the visit once seen.
+ * - Paints a solid charcoal cover first so returning visitors don't see a flash.
  */
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
-const SEEN_KEY = "yanaya-intro-seen";
-const LOGO = "/brand/yanaya-logo.png";
-const TOTAL_MS = 2200;
+const SEEN_KEY = "smoovy-intro-seen";
+const LOGO = "/smoovy/smoovy-logo.webp";
+const TOTAL_MS = 2300;
 
 type Phase = "cover" | "playing" | "leaving" | "gone";
 
@@ -32,7 +33,7 @@ function decideOnce() {
   return shouldPlay;
 }
 
-export function IntroSplash({ onDone }: { onDone: () => void }) {
+export function IntroSplash({ onDone }: { onDone?: () => void }) {
   const [phase, setPhase] = useState<Phase>("cover");
   const timers = useRef<number[]>([]);
   const doneRef = useRef(onDone);
@@ -41,7 +42,7 @@ export function IntroSplash({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     if (!decideOnce()) {
       setPhase("gone");
-      doneRef.current();
+      doneRef.current?.();
       return;
     }
     timers.current = [];
@@ -49,9 +50,9 @@ export function IntroSplash({ onDone }: { onDone: () => void }) {
     timers.current.push(window.setTimeout(() => setPhase("leaving"), TOTAL_MS - 450));
     timers.current.push(
       window.setTimeout(() => {
-        shouldPlay = false; // don't replay when navigating back home in the same visit
+        shouldPlay = false;
         setPhase("gone");
-        doneRef.current();
+        doneRef.current?.();
       }, TOTAL_MS),
     );
     const t = timers.current;
@@ -61,48 +62,45 @@ export function IntroSplash({ onDone }: { onDone: () => void }) {
   const skip = () => {
     if (phase !== "playing") return;
     timers.current.forEach((id) => window.clearTimeout(id));
-    setPhase("leaving");
     shouldPlay = false;
+    setPhase("leaving");
     timers.current = [
       window.setTimeout(() => {
         setPhase("gone");
-        doneRef.current();
+        doneRef.current?.();
       }, 250),
     ];
   };
 
   if (phase === "gone") return null;
-
   const leaving = phase === "leaving";
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-cream"
+      className="fixed inset-0 z-[90] bg-cream"
       onClick={skip}
       role="presentation"
       style={leaving ? { animation: "y-fade-out .45s ease forwards" } : undefined}
     >
-      {/* green flood */}
       <div
-        className="absolute inset-0 bg-leaf-700"
+        className="absolute inset-0 bg-night"
         style={phase === "playing" ? { animation: "y-flood .5s cubic-bezier(.6,0,.3,1) both" } : undefined}
       >
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-leaf-500/40" />
-        <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-sage-400/25" />
+        <div className="absolute -top-32 -right-24 h-80 w-80 rounded-full bg-sage/15 blur-2xl" />
+        <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-olive/40 blur-2xl" />
       </div>
 
       {phase !== "cover" ? (
         <div className="absolute inset-0 grid place-items-center px-6">
-          <div style={leaving ? { animation: "y-lift .45s ease-in forwards" } : undefined}>
+          <div
+            className="flex flex-col items-center"
+            style={leaving ? { animation: "y-lift .45s ease-in forwards" } : undefined}
+          >
             <div
-              className="relative w-80 max-w-[85vw]"
-              style={{
-                animation:
-                  "y-pop .7s cubic-bezier(.3,1.4,.5,1) .3s both, y-land .25s ease-out 1s both",
-              }}
+              className="relative w-80 max-w-[80vw]"
+              style={{ animation: "y-pop .7s cubic-bezier(.3,1.4,.5,1) .3s both, y-land .25s ease-out 1s both" }}
             >
-              <Image src={LOGO} alt="Yanaya: It Will End In Health" width={640} height={250} priority />
-              {/* light sweep, masked to the logo's shape */}
+              <Image src={LOGO} alt="Smoovy" width={287} height={95} priority className="h-auto w-full" />
               <div
                 aria-hidden
                 className="absolute inset-0"
@@ -112,15 +110,21 @@ export function IntroSplash({ onDone }: { onDone: () => void }) {
                   WebkitMaskSize: "100% 100%",
                   maskSize: "100% 100%",
                   backgroundImage:
-                    "linear-gradient(105deg, transparent 35%, rgba(255,255,255,.75) 50%, transparent 65%)",
+                    "linear-gradient(105deg, transparent 35%, rgba(255,255,255,.8) 50%, transparent 65%)",
                   backgroundSize: "60% 100%",
                   backgroundRepeat: "no-repeat",
                   animation: "y-shine .6s ease-in-out 1.15s both",
                 }}
               />
             </div>
+            <p
+              className="font-display mt-5 text-xl font-semibold tracking-[0.35em] text-sage uppercase"
+              style={{ animation: "y-rise .5s ease-out 1.25s both" }}
+            >
+              by Yanaya
+            </p>
           </div>
-          <p className="absolute bottom-10 text-xs font-medium text-white/60">Tap to skip</p>
+          <p className="absolute bottom-10 text-xs font-medium text-white/50">Tap to skip</p>
         </div>
       ) : null}
     </div>
